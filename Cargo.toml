@@ -1,0 +1,12 @@
+[package]
+name = "oxiref"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+directories = "6.0.0"
+flate2 = "1.1.10"
+iced = "0.14.0"
+serde = { version = "1.0.229", features = ["derive"] }
+tar = "0.4.46"
+toml = "1.1.8"
