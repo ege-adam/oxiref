@@ -1,14 +1,14 @@
-use std::io::{self, Read};
+use std::env::temp_dir;
+use std::fs;
+use std::io::{self};
 use std::path::PathBuf;
-use std::str::FromStr;
-use std::time::Instant;
-use std::{fs, path};
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 
-use directories::{ProjectDirs, UserDirs};
-use iced::widget::{button, text};
-use iced::{Element, Point, Size, Subscription, Task, Theme, window};
+use directories::ProjectDirs;
+use iced::widget::text;
+use iced::{Element, Point, Size, Subscription, Task, Theme, time, window};
 
 mod constants;
 
@@ -36,6 +36,7 @@ pub fn main() -> iced::Result {
     .subscription(OxiRef::subscription)
     .window_size(size)
     .position(position)
+    .exit_on_close_request(false)
     .theme(Theme::Dracula)
     .run()
 }
@@ -94,17 +95,21 @@ impl WindowConfig {
         }
     }
 
-    fn save(&self) -> io::Result<()> {
+    fn save(&mut self) -> io::Result<()> {
         let path = Self::path().ok_or_else(|| io::Error::other("no config dir"))?;
-
-        if let Some(dir) = &path.parent() {
+        if let Some(dir) = path.parent() {
             fs::create_dir_all(dir)?;
         }
 
+        let tmp = path.with_extension("toml.tmp");
         fs::write(
-            path,
+            &tmp,
             toml::to_string_pretty(self).map_err(io::Error::other)?,
-        )
+        )?;
+        fs::rename(&tmp, &path)?;
+
+        self.dirty_since = None;
+        Ok(())
     }
 }
 
@@ -130,7 +135,8 @@ impl OxiRef {
                 {
                     match self.config.save() {
                         Err(e) => {
-                            println!("Error when saving config {e}");
+                            eprintln!("Error when saving config {e}");
+                            self.config.dirty_since = None; // retry on the next change instead
                         }
                         _ => (),
                     }
@@ -164,6 +170,11 @@ impl OxiRef {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        window::events().map(|(_id, event)| Message::Window(event))
+        let window_event = window::events().map(|(_id, event)| Message::Window(event));
+
+        Subscription::batch([
+            window_event,
+            time::every(Duration::from_millis(16)).map(Message::Tick),
+        ])
     }
 }
