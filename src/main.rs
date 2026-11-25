@@ -1,4 +1,5 @@
 mod app;
+mod canvas;
 mod config;
 mod constants;
 

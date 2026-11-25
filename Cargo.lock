@@ -2669,6 +2669,7 @@ dependencies = [
  "directories",
  "flate2",
  "iced",
+ "image",
  "serde",
  "tar",
  "toml",

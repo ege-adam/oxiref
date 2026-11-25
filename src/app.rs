@@ -1,8 +1,6 @@
-use std::time::{Duration, Instant};
-
-use iced::{Element, Subscription, Task, time, widget::text, window};
-
 use crate::config::WindowConfig;
+use iced::{Element, Subscription, Task, time, widget::text, window};
+use std::time::{Duration, Instant};
 
 #[derive(Default, Debug)]
 pub struct OxiRef {
